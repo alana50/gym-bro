@@ -21,7 +21,7 @@ public class ActivityMain extends Activity {
     }
     
     public void onClickStart(View view) {
-    	Intent intent = new Intent(this, ActivityExerciseList.class);
+    	Intent intent = new Intent(this, ActivitySelectWorkout.class);
     	startActivity(intent);
     }
 }

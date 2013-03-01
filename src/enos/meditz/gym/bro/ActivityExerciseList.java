@@ -19,7 +19,7 @@ public class ActivityExerciseList extends FragmentActivity {
 	@Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_exercise_list);
+        setContentView(R.layout.activity_select_one_or_add);
     }
 	
 	@Override

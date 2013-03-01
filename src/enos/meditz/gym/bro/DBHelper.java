@@ -13,13 +13,18 @@ import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 
 public class DBHelper extends SQLiteOpenHelper {
-	private static final int DATABASE_VERSION = 1;
+	private static final int DATABASE_VERSION = 4;
 	private static final SimpleDateFormat df = new SimpleDateFormat("MM/dd/yyyy HH:mm:ss");
 	
 	private static final String MUSCLE_TABLE_CREATE = "CREATE TABLE "
 			+ FeedEntry.MUSCLE_TABLE + " ("
 			+ FeedEntry._ID + " INTEGER PRIMARY KEY AUTOINCREMENT, "
 			+ FeedEntry.MUSCLE_COLUMN_NAME + " TEXT UNIQUE);";
+	
+	private static final String WORKOUT_TABLE_CREATE = "CREATE TABLE "
+			+ FeedEntry.WORKOUT_TABLE + " ("
+			+ FeedEntry._ID + " INTEGER PRIMARY KEY AUTOINCREMENT, "
+			+ FeedEntry.WORKOUT_COLUMN_NAME + " TEXT UNIQUE);";
 	
 	private static final String EXERCISE_TABLE_CREATE = "CREATE TABLE "
 			+ FeedEntry.EXERCISE_TABLE + " ("
@@ -31,7 +36,7 @@ public class DBHelper extends SQLiteOpenHelper {
 			+ FeedEntry._ID + " INTEGER PRIMARY KEY AUTOINCREMENT, "
 			+ FeedEntry.SET_COLUMN_EXERCISE + " INT, "
 			+ FeedEntry.SET_COLUMN_TIME + " TEXT, "
-			+ FeedEntry.SET_COLUMN_REPS + " INT, "
+			+ FeedEntry.SET_COLUMN_REPS + " DECIMAL, "
 			+ FeedEntry.SET_COLUMN_WEIGHT + " DECIMAL, "
 			+ FeedEntry.SET_COLUMN_COMMENT + " TEXT);";
 	
@@ -48,26 +53,41 @@ public class DBHelper extends SQLiteOpenHelper {
     @Override
     public void onCreate(SQLiteDatabase db) {
     	db.execSQL(MUSCLE_TABLE_CREATE);
+    	db.execSQL(WORKOUT_TABLE_CREATE);
         db.execSQL(EXERCISE_TABLE_CREATE);
         db.execSQL(SET_TABLE_CREATE);
         db.execSQL(WORKS_TABLE_CREATE);
-        
-        // initial data population would go here
     }
 
 	@Override
 	public void onUpgrade(SQLiteDatabase db, int arg1, int arg2) {
 		db.execSQL("DROP TABLE IF EXISTS " + FeedEntry.MUSCLE_TABLE);
 		db.execSQL("DROP TABLE IF EXISTS " + FeedEntry.EXERCISE_TABLE);
+		db.execSQL("DROP TABLE IF EXISTS " + FeedEntry.WORKOUT_TABLE);
 		db.execSQL("DROP TABLE IF EXISTS " + FeedEntry.SET_TABLE);
 		db.execSQL("DROP TABLE IF EXISTS " + FeedEntry.WORKS_TABLE);
     	onCreate(db);
+	}
+	
+	public static long createWorkout(Context context) {
+		ContentValues values = new ContentValues();
+        values.put(FeedEntry.WORKOUT_COLUMN_NAME, "");
+        return (new DBHelper(context)).getWritableDatabase().insert(FeedEntry.WORKOUT_TABLE, null, values);
 	}
 	
 	public static void addExercise(Context context, String name) {
 		ContentValues values = new ContentValues();
         values.put(FeedEntry.EXERCISE_COLUMN_NAME, name);
         (new DBHelper(context)).getWritableDatabase().insert(FeedEntry.EXERCISE_TABLE, null, values);
+	}
+	
+	public static void addSet(Context context, Exercise exercise, double weight, double reps) {
+		ContentValues values = new ContentValues();
+        values.put(FeedEntry.SET_COLUMN_EXERCISE, exercise.id);
+        values.put(FeedEntry.SET_COLUMN_WEIGHT, weight);
+        values.put(FeedEntry.SET_COLUMN_REPS, reps);
+        values.put(FeedEntry.SET_COLUMN_TIME, df.format(new Date()));
+        (new DBHelper(context)).getWritableDatabase().insert(FeedEntry.SET_TABLE, null, values);
 	}
 	
 	public static Exercise getExercise(Context context, long id) {
@@ -81,11 +101,13 @@ public class DBHelper extends SQLiteOpenHelper {
 		}
 	}
 	
+	public static Cursor getExercisesCursor(Context context) {
+		return (new DBHelper(context)).getReadableDatabase().rawQuery("SELECT * FROM " + FeedEntry.EXERCISE_TABLE + ";", null);
+	}
+	
 	public static ArrayList<Exercise> getExercises(Context context) {
 		ArrayList<Exercise> result = new ArrayList<Exercise>();
-		SQLiteDatabase db = (new DBHelper(context)).getReadableDatabase();
-		Cursor c = db.rawQuery(
-				"SELECT * FROM " + FeedEntry.EXERCISE_TABLE + ";", null);
+		Cursor c = getExercisesCursor(context);
 		while (c.moveToNext()) {
 			result.add(new Exercise(c.getLong(0), c.getString(1)));
 		}
@@ -109,5 +131,33 @@ public class DBHelper extends SQLiteOpenHelper {
 			result.add(new Set(c.getLong(0), c.getLong(1), date, c.getInt(3), c.getDouble(4), c.getString(5)));
 		}
 		return result;
+	}
+	
+	public static ArrayList<Workout> getWorkoutsLight(Context context) {
+		ArrayList<Workout> result = new ArrayList<Workout>();
+		Cursor c = (new DBHelper(context)).getReadableDatabase().rawQuery("SELECT * FROM " + FeedEntry.WORKOUT_TABLE + ";", null);
+		while (c.moveToNext()) {
+			result.add(new Workout(c.getLong(0), c.getString(1)));
+		}
+		return result;
+	}
+	
+	public static Workout getWorkout(Context context, long id) {
+		Cursor c = (new DBHelper(context)).getReadableDatabase().rawQuery(
+				"SELECT * FROM " + FeedEntry.WORKOUT_TABLE +
+				" WHERE " + FeedEntry._ID + "='" + id + "';", null);
+		if(c.moveToFirst()) {
+			return new Workout(c.getLong(0), c.getString(1));
+		} else {
+			return null;
+		}
+	}
+	
+	public static boolean contains(Context context, Workout workout, Exercise exercise) {
+		Cursor c = (new DBHelper(context)).getReadableDatabase().rawQuery(
+				"SELECT * FROM " + FeedEntry.WORKOUT_EXERCISE_TABLE +
+				" WHERE " + FeedEntry.WORKOUT_EXERCISE_COLUMN_EXERCISE + "='" + exercise.id + 
+				" AND " + FeedEntry.WORKOUT_EXERCISE_COLUMN_WORKOUT + "='" + workout.id + "';", null);
+		return c.moveToFirst();
 	}
 }

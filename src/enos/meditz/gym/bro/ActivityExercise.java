@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 
+
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Dialog;
@@ -21,9 +22,9 @@ import android.widget.ListView;
 import android.widget.TextView;
 
 public class ActivityExercise extends Activity {
-	private Exercise exercise;
-	private ArrayList<Set> today = new ArrayList<Set>();
-	private ArrayList<Set> past = new ArrayList<Set>();
+	private static Exercise exercise;
+	private static ArrayList<Set> today = new ArrayList<Set>();
+	private static ArrayList<Set> past = new ArrayList<Set>();
 	
 	@Override
     public void onCreate(Bundle savedInstanceState) {
@@ -40,10 +41,12 @@ public class ActivityExercise extends Activity {
 
 		((ListView) findViewById(R.id.listView1)).setAdapter(new SetAdapter(this,
 				R.layout.row_set, today));
+		((ListView) findViewById(R.id.listView2)).setAdapter(new SetAdapter(this,
+				R.layout.row_set, past));
 	}
 	
 	public void onClickAdd(View view) {
-		
+		(new AddSetDialogFragment()).show(getFragmentManager(), "new_set");
 	}
 	
 	public static class AddSetDialogFragment extends DialogFragment {
@@ -52,12 +55,13 @@ public class ActivityExercise extends Activity {
 
 	        // Inflate and set the layout for the dialog
 	        // Pass null as the parent view because its going in the dialog layout
-	        builder.setView(getActivity().getLayoutInflater().inflate(R.layout.dialog_add_exercise, null))
+	        builder.setView(getActivity().getLayoutInflater().inflate(R.layout.dialog_add_set, null))
 	        	// Add action buttons
 	               .setPositiveButton("Add", new DialogInterface.OnClickListener() {
 	                   public void onClick(DialogInterface dialog, int id) {
-	                	   DBHelper.addExercise(getActivity(), ((EditText) getDialog().findViewById(R.id.new_exercise_name)).getText().toString());
-	                	   ((ActivityExerciseList) getActivity()).onResume();
+	                	   DBHelper.addSet(getActivity(), exercise, Double.parseDouble(((EditText) getDialog().findViewById(R.id.weight)).getText().toString()),
+	                			   Double.parseDouble(((EditText) getDialog().findViewById(R.id.reps)).getText().toString()));
+	                	   ((ActivityExercise) getActivity()).onResume();
 	                   }
 	               })
 	               .setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
@@ -87,11 +91,11 @@ public class ActivityExercise extends Activity {
 	}
 	
 	private class SetAdapter extends ArrayAdapter<Set> {
-		private ArrayList<Set> items;
+		private ArrayList<Set> sets;
 
 		public SetAdapter(Context context, int textViewResourceId, ArrayList<Set> items) {
 			super(context, textViewResourceId, items);
-			this.items = items;
+			sets = items;
 		}
 
 		@Override
@@ -101,16 +105,12 @@ public class ActivityExercise extends Activity {
 				LayoutInflater vi = (LayoutInflater) getSystemService(Context.LAYOUT_INFLATER_SERVICE);
 				v = vi.inflate(R.layout.row_set, null);
 			}
-			Set s = items.get(position);
+			Set s = sets.get(position);
 			if (s != null) {
-				TextView tt = (TextView) v.findViewById(R.id.weighttext);
-				TextView bt = (TextView) v.findViewById(R.id.reptext);
-				if (tt != null) {
-					tt.setText("Weight: " + s.weight);
-				}
-				if (bt != null) {
-					bt.setText("Reps: " + s.reps);
-				}
+				Calendar c = s.calendar;
+				((TextView) v.findViewById(R.id.datetext)).setText(c.get(Calendar.MONTH) + "/" + c.get(Calendar.DAY_OF_MONTH) + "/" + c.get(Calendar.YEAR));
+				((TextView) v.findViewById(R.id.weighttext)).setText("Weight: " + s.weight);
+				((TextView) v.findViewById(R.id.reptext)).setText("Reps: " + s.reps);
 			}
 			return v;
 		}
