@@ -16,11 +16,13 @@
             android:textAppearance="?android:attr/textAppearanceMedium" />
 
         <EditText
-            android:id="@+id/new_exercise_name"
+            android:id="@+id/workoutName"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:inputType="textCapWords" />
+            android:inputType="textCapWords"
+            android:singleLine="true"
+            android:imeOptions="actionDone" />
     </LinearLayout>
 
     <ListView
@@ -56,6 +58,7 @@
         android:id="@+id/buttonCreate"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Create Workout" />
+        android:text="Save Workout"
+        android:onClick="onClickSave" />
 
 </LinearLayout>

@@ -13,9 +13,9 @@
 
     <Button
         android:id="@+id/button"
-        android:onClick="onClickAdd"
+        android:onClick="onClickCreate"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Add New" />
+        android:text="Create New" />
 
 </LinearLayout>

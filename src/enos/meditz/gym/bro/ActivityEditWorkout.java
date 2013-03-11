@@ -3,8 +3,6 @@ package enos.meditz.gym.bro;
 import java.util.ArrayList;
 import java.util.List;
 
-import enos.meditz.gym.bro.ActivityExerciseList.AddExerciseDialogFragment;
-
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Dialog;
@@ -15,9 +13,7 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
-import android.view.View.OnClickListener;
 import android.view.ViewGroup;
-import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.EditText;
 import android.widget.ListView;
@@ -25,7 +21,7 @@ import android.widget.TextView;
 import android.widget.CheckBox;
 
 public class ActivityEditWorkout extends Activity {
-	private List<Exercise> selectedExercises = new ArrayList<Exercise>();
+	private List<Exercise> selectedExercises;
 	private Workout workout;
 	
 	@Override
@@ -37,15 +33,20 @@ public class ActivityEditWorkout extends Activity {
 	@Override
 	public void onResume() {
 		super.onResume();
+		selectedExercises = new ArrayList<Exercise>();
 		workout = DBHelper.getWorkout(this, getIntent().getLongExtra(ExtraHelper.EXTRA_WORKOUT, -1));
+		if(workout != null) {
+			EditText name = (EditText) findViewById(R.id.workoutName);
+			name.setText(workout.name);
+		}
 		final ListView listView = (ListView) findViewById(R.id.listView);
 		listView.setAdapter(new CheckExerciseAdapter(this, R.layout.row_check, DBHelper.getExercises(this)));
 	}
 	
 	private class CheckExerciseAdapter extends ArrayAdapter<Exercise> {
-		private ArrayList<Exercise> exercises;
+		private List<Exercise> exercises;
 
-		public CheckExerciseAdapter(Context context, int textViewResourceId, ArrayList<Exercise> items) {
+		public CheckExerciseAdapter(Context context, int textViewResourceId, List<Exercise> items) {
 			super(context, textViewResourceId, items);
 			exercises = items;
 		}
@@ -62,9 +63,10 @@ public class ActivityEditWorkout extends Activity {
 			cb.setTag(e);
 			TextView tv = (TextView) v.findViewById(R.id.label);
 			tv.setText(e.name);
-			//if(DBHelper.contains(ActivityEditWorkout.this, workout, e)) {
-				
-			//}
+			if(workout != null && DBHelper.contains(ActivityEditWorkout.this, workout, e)) {
+				cb.setChecked(true);
+				selectedExercises.add((Exercise) cb.getTag());
+			}
 			return v;
 		}
 	}
@@ -74,7 +76,7 @@ public class ActivityEditWorkout extends Activity {
 		if(cb.isChecked()) {
 			selectedExercises.add((Exercise) cb.getTag());
 		} else {
-			selectedExercises.remove(cb.getTag());
+			selectedExercises.remove((Exercise) cb.getTag());
 		}
 	}
 	
@@ -107,7 +109,8 @@ public class ActivityEditWorkout extends Activity {
 	    }
 	}
 	
-	public void onClickCreate(View v) {
-		
+	public void onClickSave(View v) {
+		DBHelper.updateWorkout(this, workout, ((EditText) findViewById(R.id.workoutName)).getText().toString(), selectedExercises);
+		startActivity(new Intent(this, ActivitySelectWorkout.class));
 	}
 }
